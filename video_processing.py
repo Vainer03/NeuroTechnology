@@ -8,12 +8,10 @@ from PIL import Image, ImageDraw, ImageFont
 import traceback
 import textwrap
 
-# --- Глобальная переменная для модели Whisper (загружаем один раз) ---
 whisper_model = None
 
 # Загружает модель OpenAI Whisper один раз и сохраняет в глобальной переменной whisper_model.
 def load_whisper_model(model_name="base"):
-    """Загружает модель Whisper, если она еще не загружена."""
     global whisper_model
     if whisper_model is None:
         print(f"Загрузка модели Whisper: {model_name}...")
@@ -28,7 +26,6 @@ def load_whisper_model(model_name="base"):
 
 # Преобразует время в секундах в строку формата ЧЧ:ММ:СС,мс для SRT-файлов.
 def format_timestamp_srt(seconds):
-    """Форматирует время в секундах в SRT-совместимый формат ЧЧ:ММ:СС,МС."""
     assert seconds >= 0, "non-negative timestamp expected"
     milliseconds = round(seconds * 1000.0)
     hours = milliseconds // 3_600_000; milliseconds -= hours * 3_600_000
@@ -37,11 +34,7 @@ def format_timestamp_srt(seconds):
     return f"{hours:02d}:{minutes:02d}:{seconds_val:02d},{milliseconds:03d}"
 
 # Обрабатывает аудиофайл через Whisper. Генерирует .srt файл с таймингами субтитров. Возвращает путь к созданному .srt и полный текст транскрипции.
-def generate_srt_from_audio(audio_path, language=None):
-    """
-    Генерирует субтитры в формате SRT из аудиофайла с помощью Whisper.
-    Возвращает путь к SRT файлу и полный текст транскрипции.
-    """
+def generate_srt_from_audio_whisper(audio_path, language=None):
     try:
         model = load_whisper_model()
         absolute_audio_path = os.path.abspath(audio_path)
@@ -76,10 +69,6 @@ def generate_srt_from_audio(audio_path, language=None):
 
 # Парсит содержимое .srt файла в структуру, пригодную для MoviePy: [((start_time_sec, end_time_sec), "text"), ...]
 def parse_srt_content(srt_string):
-    """
-    Парсит строку с содержимым SRT и возвращает список субтитров
-    в формате [((start_sec, end_sec), "text"), ...].
-    """
     subs = []
     pattern = re.compile(r"(\d+)\s*\n"
                          r"(\d{2}:\d{2}:\d{2}[,.]\d{3})\s*-->\s*(\d{2}:\d{2}:\d{2}[,.]\d{3})\s*\n"
@@ -119,10 +108,6 @@ def render_text_with_pillow(
     padding_vertical_ratio=0.1,
     align_text="center"
 ):
-    """
-    Рендерит текст с переносом строк на изображении Pillow.
-    Автоматически уменьшает размер шрифта, если текст не помещается по высоте.
-    """
     try:
 
         current_font_size = font_size
@@ -411,7 +396,7 @@ def process_video_with_subtitles(input_video_file_obj, filename_prefix="processe
         traceback.print_exc()
         return None, f"Ошибка извлечения аудио: {e}", None
 
-    srt_file_path, full_transcription = generate_srt_from_audio(temp_audio_path)
+    srt_file_path, full_transcription = generate_srt_from_audio_whisper(temp_audio_path)
     if not srt_file_path or full_transcription is None:
         error_msg_srt = "Ошибка генерации субтитров"
         if full_transcription is None and srt_file_path:

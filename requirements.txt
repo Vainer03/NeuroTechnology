@@ -1,0 +1,6 @@
+streamlit==1.45.1
+openai-whisper @ git+https://github.com/openai/whisper.git@dd985ac4b90cafeef8712f2998d62c59c3e62d22
+moviepy==2.2.1 
+Pillow==11.2.1
+numpy==2.2.3
+torch==2.7.0
